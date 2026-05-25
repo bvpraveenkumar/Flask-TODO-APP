@@ -5,12 +5,14 @@ from tinydb.storages import MemoryStorage
 from app import create_app
 import routes
 
+
 @pytest.fixture(autouse=True)
 def setup_db():
     # Use in-memory TinyDB for isolation
     routes.db = TinyDB(storage=MemoryStorage)
     yield
     routes.db.close()
+
 
 def get_client():
     app = create_app()
@@ -32,11 +34,27 @@ def test_add_task():
     assert any(t['title'] == 'New Task' for t in tasks)
 
 
+def test_add_task_uses_unique_incrementing_ids():
+    client = get_client()
+    routes.db.insert({'id': 1, 'title': 'Existing Task', 'complete': False})
+    response = client.post('/add', data={'title': 'Second Task'}, follow_redirects=True)
+    assert response.status_code == 200
+    tasks = sorted(routes.db.all(), key=lambda item: item['id'])
+    assert [task['id'] for task in tasks] == [1, 2]
+
+
+def test_add_task_ignores_blank_titles():
+    client = get_client()
+    response = client.post('/add', data={'title': '   '}, follow_redirects=True)
+    assert response.status_code == 200
+    assert routes.db.all() == []
+
+
 def test_delete_task():
     client = get_client()
     # Insert a task directly
     routes.db.insert({'id': 1, 'title': 'To Delete', 'complete': False})
     response = client.post('/delete/1', follow_redirects=True)
     assert response.status_code == 200
-    Task = Query()
-    assert routes.db.search(Task.id == 1) == []
+    task = Query()
+    assert routes.db.search(task.id == 1) == []

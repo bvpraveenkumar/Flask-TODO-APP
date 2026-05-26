@@ -9,6 +9,10 @@ A minimal TODO web app built with Flask and TinyDB.
 - Delete tasks.
 - Persistent storage in `db.json`.
 
+## Plans
+- **Lite**: supports up to **5 tasks**.
+- **Pro**: supports **unlimited tasks**.
+
 ## Tech Stack
 - Python 3
 - Flask
